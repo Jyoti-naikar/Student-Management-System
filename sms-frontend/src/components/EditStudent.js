@@ -1,45 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
+import { authHeader, logout } from './services/auth'; // ✅ Added
 
 function EditStudent() {
-  const { id } = useParams(); // Grabs the student ID from the URL
+  const { id } = useParams();
   const navigate = useNavigate();
   
-  // State to hold the student data
   const [student, setStudent] = useState({
-    name: '', rollNumber: '', email: '', phoneNumber: '', department: '', academicYear: '', address: ''
+    name: '',
+    rollNumber: '',
+    email: '',
+    phoneNumber: '',
+    department: '',
+    academicYear: '',
+    address: ''
   });
 
-  // 1. VIEWING ONE STUDENT'S DETAILS (Runs when the page opens)
+  // ✅ GET student with auth header
   useEffect(() => {
-    axios.get(`http://localhost:8080/api/students/${id}`)
+    axios.get(`http://localhost:8080/api/students/${id}`, {
+      headers: authHeader()
+    })
       .then(response => {
-        setStudent(response.data); // Fills the form with the existing data
+        setStudent(response.data);
       })
-      .catch(error => console.error(error));
-  }, [id]);
+      .catch(error => {
+        console.error(error);
+        if (error.response && error.response.status === 401) {
+          alert("Session expired. Please login again.");
+          logout();
+          navigate('/login');
+        }
+      });
+  }, [id, navigate]);
 
-  // Handle typing in the input boxes
   const handleChange = (e) => {
     setStudent({ ...student, [e.target.name]: e.target.value });
   };
 
-  // 2. UPDATING STUDENT INFORMATION (Runs when you click Save)
+  // ✅ PUT update with auth header
   const handleSubmit = (e) => {
     e.preventDefault();
-    axios.put(`http://localhost:8080/api/students/${id}`, student)
-      .then(response => {
+    axios.put(
+      `http://localhost:8080/api/students/${id}`,
+      student,
+      { headers: authHeader() }
+    )
+      .then(() => {
         alert("Student Updated Successfully!");
-        navigate('/'); // Go back to the main list
+        navigate('/');
       })
-      .catch(error => console.error(error));
+      .catch(error => {
+        console.error(error);
+        if (error.response && error.response.status === 401) {
+          alert("Session expired. Please login again.");
+          logout();
+          navigate('/login');
+        }
+      });
   };
 
   return (
     <div>
       <h2>Edit Student Details</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', width: '300px', gap: '10px' }}>
+      <form 
+        onSubmit={handleSubmit} 
+        style={{ display: 'flex', flexDirection: 'column', width: '300px', gap: '10px' }}
+      >
         <label>Name:</label>
         <input type="text" name="name" value={student.name} onChange={handleChange} required />
         
@@ -61,7 +89,10 @@ function EditStudent() {
         <label>Address:</label>
         <input type="text" name="address" value={student.address} onChange={handleChange} />
         
-        <button type="submit" style={{ padding: '10px', backgroundColor: '#2196F3', color: 'white', cursor: 'pointer', border: 'none' }}>
+        <button 
+          type="submit" 
+          style={{ padding: '10px', backgroundColor: '#2196F3', color: 'white', cursor: 'pointer', border: 'none' }}
+        >
           Update Student
         </button>
       </form>

@@ -1,31 +1,30 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './components/Login';
 import StudentList from './components/StudentList';
 import AddStudent from './components/AddStudent';
-import EditStudent from './components/EditStudent';
-import './App.css'; // <-- Bringing in the magic paint!
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
-      <div className="dashboard-container">
+      <Routes>
+        <Route path="/login" element={<Login />} />
         
-        {/* Navigation Bar */}
-        <nav className="navbar">
-          <h1>Student Management System</h1>
-          <div className="nav-links">
-            <Link to="/">Dashboard</Link>
-            <Link to="/add">+ Add Student</Link>
-          </div>
-        </nav>
+        <Route path="/" element={
+          <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_STUDENT']}>
+            <StudentList />
+          </ProtectedRoute>
+        } />
 
-        {/* The Routes */}
-        <Routes>
-          <Route path="/" element={<StudentList />} />
-          <Route path="/add" element={<AddStudent />} />
-          <Route path="/edit/:id" element={<EditStudent />} />
-        </Routes>
-      </div>
+        <Route path="/add-student" element={
+          <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+            <AddStudent />
+          </ProtectedRoute>
+        } />
+
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
     </Router>
   );
 }

@@ -3,43 +3,49 @@ package com.example.sms.controller;
 import com.example.sms.entity.Student;
 import com.example.sms.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/students")
-@CrossOrigin(origins = "http://localhost:3000")
 public class StudentController {
-    @Autowired
-    private StudentService service;
 
-    @PostMapping
-    public Student addStudent(@RequestBody Student student) {
-        return service.addStudent(student);
-    }
+    @Autowired
+    private StudentService studentService;
 
     @GetMapping
     public List<Student> getAllStudents() {
-        return service.getAllStudents();
+        return studentService.getAllStudents();
     }
 
-    // --- NEW ENDPOINTS FOR REACT ---
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public Student createStudent(@RequestBody Student student) {
+        return studentService.saveStudent(student);
+    }
 
-    // Grabs a single student to pre-fill the Edit Form
     @GetMapping("/{id}")
-    public Student getStudentById(@PathVariable Long id) {
-        return service.getStudentById(id);
+    public ResponseEntity<Student> getStudentById(@PathVariable Long id) {
+        Student student = studentService.getStudentById(id);
+        return ResponseEntity.ok(student);
     }
 
-    // Handles the "Update Student" button click
     @PutMapping("/{id}")
-    public Student updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
-        return service.updateStudent(id, studentDetails);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
+        // Line 46 in your error - this now matches the service method
+        Student updatedStudent = studentService.updateStudent(id, studentDetails);
+        return ResponseEntity.ok(updatedStudent);
     }
 
-    // Handles the "Delete" button click
     @DeleteMapping("/{id}")
-    public void deleteStudent(@PathVariable Long id) {
-        service.deleteStudent(id);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
+        studentService.deleteStudent(id);
+        return ResponseEntity.noContent().build();
     }
 }
